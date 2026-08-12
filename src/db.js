@@ -1,16 +1,14 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
-// ✅ Proper DB connection (Render + Local)
+// ✅ DB Connection
 let pool;
 
 if (process.env.DATABASE_URL) {
     console.log("[DB] Using Render PostgreSQL...");
     pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: {
-            rejectUnauthorized: false,
-        },
+        ssl: { rejectUnauthorized: false }
     });
 } else {
     console.log("[DB] Using Local PostgreSQL...");
@@ -19,33 +17,18 @@ if (process.env.DATABASE_URL) {
         port: 5432,
         user: 'postgres',
         password: 'postgres',
-        database: 'lotus_lms',
+        database: 'lotus_lms'
     });
 }
 
+// ==============================
+// ✅ INIT DATABASE (FIXED)
+// ==============================
 async function initDatabase() {
     try {
-        const checkResult = await pool.query(
-            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users') as table_exists"
-        );
+        console.log('[DB] Ensuring all tables exist...');
 
-        if (checkResult.rows[0].table_exists) {
-            console.log('[DB] LOTUS database already initialized.');
-
-            // Migration
-            try {
-                await pool.query(
-                    'ALTER TABLE newspapers ADD COLUMN category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL'
-                );
-                console.log('[DB] Migration applied');
-            } catch (e) {}
-
-            await createQuizTables(pool);
-            return;
-        }
-
-        console.log('[DB] Initializing database...');
-
+        // USERS
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -62,6 +45,7 @@ async function initDatabase() {
             );
         `);
 
+        // CATEGORIES
         await pool.query(`
             CREATE TABLE IF NOT EXISTS categories (
                 id SERIAL PRIMARY KEY,
@@ -72,6 +56,7 @@ async function initDatabase() {
             );
         `);
 
+        // BOOKS
         await pool.query(`
             CREATE TABLE IF NOT EXISTS books (
                 id SERIAL PRIMARY KEY,
@@ -91,6 +76,7 @@ async function initDatabase() {
             );
         `);
 
+        // NEWSPAPERS
         await pool.query(`
             CREATE TABLE IF NOT EXISTS newspapers (
                 id SERIAL PRIMARY KEY,
@@ -106,16 +92,33 @@ async function initDatabase() {
             );
         `);
 
-        await createQuizTables(pool);
-        await seedData();
+        // NOTES (🔥 MISSING BEFORE)
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS notes (
+                id SERIAL PRIMARY KEY,
+                title TEXT,
+                content TEXT,
+                category TEXT,
+                author_id INTEGER,
+                author_name TEXT,
+                author_role TEXT,
+                status TEXT,
+                file_url TEXT,
+                file_type TEXT,
+                admin_feedback TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
 
-    } catch (err) {
-        console.error('[DB Error] Failed to initialize database:', err);
-    }
-}
+        // SETTINGS (🔥 MISSING BEFORE)
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            );
+        `);
 
-async function createQuizTables(pool) {
-    try {
+        // QUIZZES
         await pool.query(`
             CREATE TABLE IF NOT EXISTS quizzes (
                 id SERIAL PRIMARY KEY,
@@ -123,25 +126,37 @@ async function createQuizTables(pool) {
                 description TEXT
             );
         `);
-        console.log('[DB] Quiz tables ready');
-    } catch (e) {
-        console.error('[DB] Quiz error:', e.message);
+
+        console.log('[DB] All tables ensured ✅');
+
+        await seedData();
+
+    } catch (err) {
+        console.error('[DB Error]:', err);
     }
 }
 
+// ==============================
+// ✅ SEED DATA
+// ==============================
 async function seedData() {
-    console.log('[DB] Seeding data...');
+    try {
+        const adminPass = bcrypt.hashSync('Cyber@007', 10);
 
-    const adminPass = bcrypt.hashSync('Cyber@007', 10);
+        await pool.query(
+            `INSERT INTO users (membership_id, role, name, email, password_hash)
+             VALUES ($1,$2,$3,$4,$5)
+             ON CONFLICT (email) DO NOTHING`,
+            ['LOTUS-ADM-001', 'admin', 'Admin', 'admin@lotus.com', adminPass]
+        );
 
-    await pool.query(
-        'INSERT INTO users (membership_id, role, name, email, password_hash) VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING',
-        ['LOTUS-ADM-001', 'admin', 'Admin', 'admin@lotus.com', adminPass]
-    );
-
-    console.log('[DB] Seed completed');
+        console.log('[DB] Seed completed');
+    } catch (err) {
+        console.error('[DB Seed Error]:', err.message);
+    }
 }
 
+// RUN INIT
 initDatabase();
 
 module.exports = pool;
