@@ -123,7 +123,87 @@ async function initDatabase() {
             CREATE TABLE IF NOT EXISTS quizzes (
                 id SERIAL PRIMARY KEY,
                 title TEXT NOT NULL,
-                description TEXT
+                description TEXT,
+                category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
+                time_limit INTEGER DEFAULT 15,
+                difficulty TEXT DEFAULT 'Medium',
+                created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+
+        // QUESTIONS
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS questions (
+                id SERIAL PRIMARY KEY,
+                quiz_id INTEGER REFERENCES quizzes(id) ON DELETE CASCADE,
+                question_text TEXT NOT NULL,
+                question_type TEXT DEFAULT 'MCQ' CHECK (question_type IN ('MCQ', 'True/False', 'Short Answer')),
+                marks INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+
+        // OPTIONS
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS options (
+                id SERIAL PRIMARY KEY,
+                question_id INTEGER REFERENCES questions(id) ON DELETE CASCADE,
+                option_text TEXT NOT NULL,
+                is_correct BOOLEAN DEFAULT false
+            );
+        `);
+
+        // QUIZ ATTEMPTS
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS quiz_attempts (
+                id SERIAL PRIMARY KEY,
+                quiz_id INTEGER REFERENCES quizzes(id) ON DELETE CASCADE,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                score INTEGER NOT NULL,
+                total_marks INTEGER NOT NULL,
+                started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+
+        // ISSUED ITEMS
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS issued_items (
+                id SERIAL PRIMARY KEY,
+                item_type TEXT,
+                item_id INTEGER NOT NULL,
+                item_title TEXT NOT NULL,
+                member_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                member_name TEXT NOT NULL,
+                issue_date TEXT NOT NULL,
+                notes TEXT,
+                status TEXT DEFAULT 'active' CHECK (status IN ('active', 'returned')),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+
+        // ITEM REQUESTS
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS item_requests (
+                id SERIAL PRIMARY KEY,
+                item_type TEXT,
+                item_id INTEGER NOT NULL,
+                item_title TEXT NOT NULL,
+                member_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                member_name TEXT NOT NULL,
+                status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+
+        // USER LOGINS
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS user_logins (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                ip_address TEXT,
+                login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
 
