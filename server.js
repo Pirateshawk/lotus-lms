@@ -246,23 +246,28 @@ app.delete('/api/books/:id', async (req, res) => {
 // ==========================================
 app.get('/api/newspapers', async (req, res) => {
     try {
-        const { date, q } = req.query;
-        let sql = 'SELECT * FROM newspapers WHERE 1=1';
+        const { date, q, category } = req.query;
+        let sql = 'SELECT n.*, c.name as category_name FROM newspapers n LEFT JOIN categories c ON n.category_id = c.id WHERE 1=1';
         const params = [];
 
         if (date) {
             params.push(date);
-            sql += ` AND publish_date = $${params.length}`;
+            sql += ` AND n.publish_date = $${params.length}`;
+        }
+
+        if (category) {
+            params.push(category);
+            sql += ` AND n.category_id = $${params.length}`;
         }
 
         if (q) {
             const searchPattern = `%${q.trim()}%`;
             params.push(searchPattern, searchPattern);
             let pIdx = params.length - 1;
-            sql += ` AND (title ILIKE $${pIdx} OR publisher ILIKE $${pIdx+1})`;
+            sql += ` AND (n.title ILIKE $${pIdx} OR n.publisher ILIKE $${pIdx+1})`;
         }
 
-        sql += ' ORDER BY publish_date DESC, id DESC';
+        sql += ' ORDER BY n.publish_date DESC, n.id DESC';
 
         const { rows: newspapers } = await db.query(sql, params);
         res.json({ success: true, count: newspapers.length, newspapers });
@@ -273,17 +278,18 @@ app.get('/api/newspapers', async (req, res) => {
 
 app.post('/api/newspapers', async (req, res) => {
     try {
-        const { title, file_url, publish_date } = req.body;
+        const { title, file_url, publish_date, category_id } = req.body;
         if (!title || !file_url) {
             return res.status(400).json({ success: false, message: 'Newspaper Name and PDF file URL are required' });
         }
 
         const pubDate = publish_date || formatDate();
+        const catId = category_id || null;
 
         const { rows } = await db.query(`
-            INSERT INTO newspapers (title, publisher, publish_date, language, edition, file_url, description)
-            VALUES ($1, 'Daily Press', $2, 'English', 'Daily Issue', $3, 'Uploaded daily newspaper issue.') RETURNING id
-        `, [title.trim(), pubDate, file_url]);
+            INSERT INTO newspapers (title, publisher, publish_date, language, edition, file_url, description, category_id)
+            VALUES ($1, 'Daily Press', $2, 'English', 'Daily Issue', $3, 'Uploaded daily newspaper issue.', $4) RETURNING id
+        `, [title.trim(), pubDate, file_url, catId]);
         
         res.json({ success: true, message: `Newspaper '${title}' uploaded successfully for ${pubDate}`, id: rows[0].id });
     } catch (err) {
@@ -387,6 +393,24 @@ app.patch('/api/notes/:id/status', async (req, res) => {
 
 app.delete('/api/notes/:id', async (req, res) => {
     try {
+        const { user_id, role } = req.query;
+        if (!user_id || !role) {
+            return res.status(403).json({ success: false, message: 'Unauthorized: missing user context' });
+        }
+
+        const { rows: notes } = await db.query('SELECT author_id, status FROM notes WHERE id = $1', [req.params.id]);
+        if (notes.length === 0) return res.status(404).json({ success: false, message: 'Note not found' });
+        
+        const note = notes[0];
+        if (role !== 'admin') {
+            if (note.author_id != user_id) {
+                return res.status(403).json({ success: false, message: 'You can only delete your own notes' });
+            }
+            if (note.status === 'approved') {
+                return res.status(403).json({ success: false, message: 'You cannot delete an approved note' });
+            }
+        }
+
         await db.query('DELETE FROM notes WHERE id = $1', [req.params.id]);
         res.json({ success: true, message: 'Note deleted' });
     } catch (err) {
@@ -658,9 +682,10 @@ app.patch('/api/issued-items/:id/return', async (req, res) => {
 app.get('/api/categories', async (req, res) => {
     try {
         const { rows: categories } = await db.query(`
-            SELECT c.*, COUNT(b.id) as book_count 
+            SELECT c.*, COUNT(DISTINCT b.id) as book_count, COUNT(DISTINCT n.id) as news_count
             FROM categories c 
             LEFT JOIN books b ON b.category_id = c.id 
+            LEFT JOIN newspapers n ON n.category_id = c.id
             GROUP BY c.id 
             ORDER BY c.name ASC
         `);
@@ -682,7 +707,7 @@ app.post('/api/categories', async (req, res) => {
             ? code.trim().toUpperCase() 
             : catName.toUpperCase().replace(/[^A-Z0-9]/g, '_').substring(0, 20);
 
-        const { rows: existing } = await db.query('SELECT id FROM categories WHERE UPPER(code) = $1 OR UPPER(name) = $2', [catCode, catName.toUpperCase()]);
+        const { rows: existing } = await db.query('SELECT id FROM categories WHERE code ILIKE $1 OR name ILIKE $2', [catCode, catName]);
         if (existing.length > 0) {
             return res.status(400).json({ success: false, message: `Category '${catName}' already exists` });
         }
@@ -777,6 +802,163 @@ app.use((req, res, next) => {
         res.status(404).json({ success: false, message: 'API Endpoint Not Found' });
     }
 });
+// ==========================================
+// 10. ONLINE QUIZ SYSTEM
+// ==========================================
+
+// Get all quizzes
+app.get('/api/quizzes', async (req, res) => {
+    try {
+        const { rows: quizzes } = await db.query(`
+            SELECT q.*, c.name as category_name 
+            FROM quizzes q 
+            LEFT JOIN categories c ON q.category_id = c.id
+            ORDER BY q.created_at DESC
+        `);
+        res.json({ success: true, quizzes });
+    } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+// Get a specific quiz with questions (No correct answers for members!)
+app.get('/api/quizzes/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { role } = req.query; // 'admin' gets correct answers
+        
+        const { rows: quizzes } = await db.query('SELECT * FROM quizzes WHERE id = $1', [id]);
+        if (quizzes.length === 0) return res.status(404).json({ success: false, message: 'Quiz not found' });
+        
+        const quiz = quizzes[0];
+        
+        const { rows: questions } = await db.query('SELECT * FROM questions WHERE quiz_id = $1 ORDER BY id ASC', [id]);
+        
+        // Fetch options
+        const { rows: options } = await db.query('SELECT * FROM options WHERE question_id IN (SELECT id FROM questions WHERE quiz_id = $1)', [id]);
+        
+        questions.forEach(q => {
+            q.options = options.filter(o => o.question_id === q.id).map(o => {
+                if (role !== 'admin') delete o.is_correct; // Security: Hide answers from non-admins
+                return o;
+            });
+        });
+        
+        quiz.questions = questions;
+        res.json({ success: true, quiz });
+    } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+// Create Quiz (Admin)
+app.post('/api/quizzes', async (req, res) => {
+    try {
+        const { title, description, category_id, time_limit, difficulty, created_by } = req.body;
+        const { rows } = await db.query(`
+            INSERT INTO quizzes (title, description, category_id, time_limit, difficulty, created_by)
+            VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
+        `, [title, description, category_id || null, time_limit || 15, difficulty || 'Medium', created_by]);
+        res.json({ success: true, quiz: rows[0] });
+    } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+// Delete Quiz (Admin)
+app.delete('/api/quizzes/:id', async (req, res) => {
+    try {
+        await db.query('DELETE FROM quizzes WHERE id = $1', [req.params.id]);
+        res.json({ success: true, message: 'Quiz deleted successfully' });
+    } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+// Add Question with Options
+app.post('/api/quizzes/:id/questions', async (req, res) => {
+    try {
+        const { question_text, question_type, marks, options } = req.body;
+        
+        await db.query('BEGIN');
+        const { rows: qRows } = await db.query(`
+            INSERT INTO questions (quiz_id, question_text, question_type, marks)
+            VALUES ($1, $2, $3, $4) RETURNING id
+        `, [req.params.id, question_text, question_type || 'MCQ', marks || 1]);
+        
+        const qId = qRows[0].id;
+        
+        if (options && options.length > 0) {
+            for (let opt of options) {
+                await db.query(`
+                    INSERT INTO options (question_id, option_text, is_correct)
+                    VALUES ($1, $2, $3)
+                `, [qId, opt.option_text, opt.is_correct || false]);
+            }
+        }
+        await db.query('COMMIT');
+        res.json({ success: true, message: 'Question added successfully' });
+    } catch (err) { 
+        await db.query('ROLLBACK');
+        res.status(500).json({ success: false, message: err.message }); 
+    }
+});
+
+// Delete Question
+app.delete('/api/questions/:id', async (req, res) => {
+    try {
+        await db.query('DELETE FROM questions WHERE id = $1', [req.params.id]);
+        res.json({ success: true, message: 'Question deleted' });
+    } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+// Submit Quiz & Grade
+app.post('/api/quizzes/:id/submit', async (req, res) => {
+    try {
+        const { user_id, answers } = req.body; // answers = [{ question_id: 1, option_id: 2, short_answer: '...' }]
+        
+        // Fetch correct answers
+        const { rows: questions } = await db.query('SELECT * FROM questions WHERE quiz_id = $1', [req.params.id]);
+        const { rows: options } = await db.query('SELECT * FROM options WHERE question_id IN (SELECT id FROM questions WHERE quiz_id = $1)', [req.params.id]);
+        
+        let score = 0;
+        let total_marks = 0;
+        
+        for (let q of questions) {
+            total_marks += q.marks;
+            const userAns = answers.find(a => a.question_id == q.id);
+            if (!userAns) continue;
+            
+            if (q.question_type === 'MCQ' || q.question_type === 'True/False') {
+                const correctOpt = options.find(o => o.question_id == q.id && o.is_correct);
+                if (correctOpt && userAns.option_id == correctOpt.id) {
+                    score += q.marks;
+                }
+            } else if (q.question_type === 'Short Answer') {
+                // Exact text matching (case insensitive)
+                const correctOpt = options.find(o => o.question_id == q.id && o.is_correct);
+                if (correctOpt && userAns.short_answer && userAns.short_answer.trim().toLowerCase() === correctOpt.option_text.trim().toLowerCase()) {
+                    score += q.marks;
+                }
+            }
+        }
+        
+        // Save Attempt
+        await db.query(`
+            INSERT INTO quiz_attempts (quiz_id, user_id, score, total_marks)
+            VALUES ($1, $2, $3, $4)
+        `, [req.params.id, user_id, score, total_marks]);
+        
+        res.json({ success: true, score, total_marks });
+    } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+// Get User Quiz History
+app.get('/api/users/:userId/quiz-history', async (req, res) => {
+    try {
+        const { rows } = await db.query(`
+            SELECT qa.*, q.title as quiz_title
+            FROM quiz_attempts qa
+            JOIN quizzes q ON qa.quiz_id = q.id
+            WHERE qa.user_id = $1
+            ORDER BY qa.completed_at DESC
+        `, [req.params.userId]);
+        res.json({ success: true, history: rows });
+    } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
 
 app.listen(PORT, () => {
     console.log(`=======================================================`);

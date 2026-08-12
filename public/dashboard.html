@@ -77,6 +77,11 @@
                 <i class="fa-regular fa-note-sticky"></i><span>Notes & Research</span>
             </a>
         </li>
+        <li class="sidebar-item" data-role-perm="admin,editor,member">
+            <a href="#quizzes" class="sidebar-link" data-tab="quizzes">
+                <i class="fa-solid fa-graduation-cap"></i><span>Quizzes</span>
+            </a>
+        </li>
         <li class="sidebar-item" data-role-perm="admin,editor">
             <a href="#members" class="sidebar-link" data-tab="members">
                 <i class="fa-solid fa-users"></i><span>Member Directory</span>
@@ -188,14 +193,23 @@
             </button>
         </div>
         <div class="lotus-card p-3 mb-4">
-            <div class="row g-3">
-                <div class="col-md-4">
+            <div class="row">
+                <div class="col-md-3">
                     <label class="form-label fw-bold" style="font-size:0.8rem;">Publication Date</label>
                     <input type="date" id="newspaper-date-filter" class="form-control" onchange="renderNewspapers()">
                 </div>
-                <div class="col-md-8">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold" style="font-size:0.8rem;">Category</label>
+                    <select id="newspaper-category-filter" class="form-select" onchange="renderNewspapers()">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
                     <label class="form-label fw-bold" style="font-size:0.8rem;">Search Newspaper</label>
-                    <input type="text" id="newspaper-search-input" class="form-control" placeholder="Search newspaper name…" onkeyup="renderNewspapers()">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="fa-solid fa-search"></i></span>
+                        <input type="text" id="newspaper-search-input" class="form-control" placeholder="Search by name..." onkeyup="if(event.key==='Enter') renderNewspapers()">
+                    </div>
                 </div>
             </div>
         </div>
@@ -327,6 +341,69 @@
             </div>
         </div>
     </section>
+    <!-- QUIZZES -->
+    <section id="view-quizzes" class="view-section" style="display:none;">
+        <div class="page-header d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="fw-bold" style="font-family:'Playfair Display',serif;color:var(--dark-roast);">Online Quizzes</h2>
+                <p class="text-muted">Test your knowledge and track your progress.</p>
+            </div>
+            <div data-role-perm="admin,editor">
+                <button class="btn btn-lotus-primary" onclick="openCreateQuizModal()">
+                    <i class="fa-solid fa-plus me-1"></i> Create Quiz
+                </button>
+            </div>
+        </div>
+
+        <!-- Quiz List View -->
+        <div id="quiz-list-container">
+            <div class="lotus-card p-3 mb-4">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold" style="font-size:0.8rem;">Category</label>
+                        <select id="quiz-category-filter" class="form-select" onchange="renderQuizzes()">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row" id="quizzes-grid"></div>
+        </div>
+
+        <!-- Quiz Taking View (Member) -->
+        <div id="quiz-take-container" style="display:none;">
+            <div class="lotus-card p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <h3 class="fw-bold m-0" id="take-quiz-title" style="color:var(--dark-roast);">Quiz Title</h3>
+                    <div class="text-danger fw-bold fs-5" id="take-quiz-timer"><i class="fa-regular fa-clock me-1"></i>00:00</div>
+                </div>
+                
+                <div class="progress mb-4" style="height: 10px;">
+                    <div id="take-quiz-progress" class="progress-bar bg-success" role="progressbar" style="width: 0%;"></div>
+                </div>
+
+                <div id="take-quiz-questions"></div>
+                
+                <div class="mt-4 text-end">
+                    <button class="btn btn-secondary me-2" onclick="cancelQuiz()">Cancel</button>
+                    <button class="btn btn-lotus-primary" onclick="submitQuiz()">Submit Quiz</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz Details View (Admin) -->
+        <div id="quiz-admin-container" style="display:none;">
+            <button class="btn btn-sm btn-outline-secondary mb-3" onclick="closeAdminQuizView()"><i class="fa-solid fa-arrow-left me-1"></i>Back to Quizzes</button>
+            <div class="lotus-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="fw-bold m-0" id="admin-quiz-title" style="color:var(--dark-roast);">Quiz Title</h3>
+                    <button class="btn btn-lotus-primary" onclick="openAddQuestionModal()"><i class="fa-solid fa-plus me-1"></i>Add Question</button>
+                </div>
+                <div id="admin-quiz-questions" class="mb-4"></div>
+            </div>
+        </div>
+    </section>
+
 </main>
 
 <!-- ================================================
@@ -561,6 +638,12 @@
                         <input type="hidden" id="modal-paper-url">
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select id="modal-paper-category" class="form-select" required>
+                            <option value="">Select Category</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Publication Date</label>
                         <input type="date" id="modal-paper-date" class="form-control" required>
                     </div>
@@ -780,6 +863,113 @@
                     <button type="submit" class="btn btn-lotus-primary">Create Account</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Create Quiz Modal -->
+<div class="modal fade" id="modalCreateQuiz" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header" style="background:var(--soft-linen);border-bottom:2px solid var(--sage-green);">
+                <h5 class="modal-title fw-bold" style="color:var(--dark-roast);">Create New Quiz</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="create-quiz-form" onsubmit="submitCreateQuiz(event)">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input type="text" id="modal-quiz-title" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea id="modal-quiz-desc" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Category</label>
+                            <select id="modal-quiz-category" class="form-select" required></select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Time Limit (mins)</label>
+                            <input type="number" id="modal-quiz-time" class="form-control" value="15" min="1" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Difficulty</label>
+                        <select id="modal-quiz-diff" class="form-select">
+                            <option value="Easy">Easy</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="Hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-lotus-primary">Create Quiz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Question Modal -->
+<div class="modal fade" id="modalAddQuestion" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header" style="background:var(--soft-linen);border-bottom:2px solid var(--sage-green);">
+                <h5 class="modal-title fw-bold" style="color:var(--dark-roast);">Add Question</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="add-question-form" onsubmit="submitAddQuestion(event)">
+                <input type="hidden" id="modal-q-quiz-id">
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Question Text</label>
+                            <textarea id="modal-q-text" class="form-control" rows="2" required></textarea>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Type</label>
+                            <select id="modal-q-type" class="form-select" onchange="toggleQuestionOptions()">
+                                <option value="MCQ">MCQ</option>
+                                <option value="True/False">True/False</option>
+                                <option value="Short Answer">Short Answer</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Marks</label>
+                            <input type="number" id="modal-q-marks" class="form-control" value="1" min="1" required>
+                        </div>
+                    </div>
+                    
+                    <div id="options-container" class="mt-3 p-3 border rounded bg-light">
+                        <h6 class="fw-bold mb-3">Options / Correct Answer</h6>
+                        <div id="options-list">
+                            <!-- Dynamically generated options based on type -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-lotus-primary">Save Question</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Quiz Results Modal -->
+<div class="modal fade" id="modalQuizResult" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg text-center">
+            <div class="modal-body p-5">
+                <i class="fa-solid fa-trophy fa-4x text-warning mb-3"></i>
+                <h2 class="fw-bold" style="color:var(--dark-roast);">Quiz Completed!</h2>
+                <h4 class="mt-3">Your Score: <span id="result-score" class="text-success fw-bold"></span> / <span id="result-total"></span></h4>
+                <p class="text-muted mt-2">Your attempt has been saved.</p>
+                <button class="btn btn-lotus-primary mt-4 px-4" data-bs-dismiss="modal">Return to Quizzes</button>
+            </div>
         </div>
     </div>
 </div>

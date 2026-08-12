@@ -12,6 +12,15 @@ async function initDatabase() {
         const checkResult = await pool.query("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users') as table_exists");
         if (checkResult.rows[0].table_exists) {
             console.log('[DB] LOTUS database already initialized. Skipping schema creation and seeding.');
+            // Migration: Add category_id to newspapers if it doesn't exist
+            try {
+                await pool.query('ALTER TABLE newspapers ADD COLUMN category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL');
+                console.log('[DB] Migration: Added category_id to newspapers');
+            } catch (e) {
+                // Column might already exist, ignore
+            }
+            // Migration: Create quiz tables
+            await createQuizTables(pool);
             return;
         }
 
@@ -70,6 +79,7 @@ async function initDatabase() {
             CREATE TABLE IF NOT EXISTS newspapers (
                 id SERIAL PRIMARY KEY,
                 title TEXT NOT NULL,
+                category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
                 publisher TEXT DEFAULT 'Press Issue',
                 publish_date TEXT NOT NULL,
                 language TEXT DEFAULT 'English',
@@ -122,9 +132,56 @@ async function initDatabase() {
             );
         `);
 
+        await createQuizTables(pool);
         await seedData();
     } catch (err) {
         console.error('[DB Error] Failed to initialize database:', err);
+    }
+}
+
+async function createQuizTables(pool) {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS quizzes (
+                id SERIAL PRIMARY KEY,
+                title TEXT NOT NULL,
+                description TEXT,
+                category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
+                time_limit INTEGER DEFAULT 15,
+                difficulty TEXT DEFAULT 'Medium',
+                created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE TABLE IF NOT EXISTS questions (
+                id SERIAL PRIMARY KEY,
+                quiz_id INTEGER REFERENCES quizzes(id) ON DELETE CASCADE,
+                question_text TEXT NOT NULL,
+                question_type TEXT DEFAULT 'MCQ' CHECK (question_type IN ('MCQ', 'True/False', 'Short Answer')),
+                marks INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE TABLE IF NOT EXISTS options (
+                id SERIAL PRIMARY KEY,
+                question_id INTEGER REFERENCES questions(id) ON DELETE CASCADE,
+                option_text TEXT NOT NULL,
+                is_correct BOOLEAN DEFAULT false
+            );
+            
+            CREATE TABLE IF NOT EXISTS quiz_attempts (
+                id SERIAL PRIMARY KEY,
+                quiz_id INTEGER REFERENCES quizzes(id) ON DELETE CASCADE,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                score INTEGER NOT NULL,
+                total_marks INTEGER NOT NULL,
+                started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        console.log('[DB] Quiz tables verified/created successfully.');
+    } catch (e) {
+        console.error('[DB] Error creating quiz tables:', e.message);
     }
 }
 

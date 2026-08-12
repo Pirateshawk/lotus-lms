@@ -108,6 +108,7 @@ function navigateTab(tab) {
         case 'books':      renderBooks();      break;
         case 'newspapers': renderNewspapers(); break;
         case 'notes':      renderNotes();      break;
+        case 'quizzes':    renderQuizzes();    break;
         case 'members':    renderMembers();    break;
         case 'settings':   renderSettings();   break;
     }
@@ -376,7 +377,10 @@ async function fetchCategories(forceRefresh = false) {
             state.categories = data.categories;
             const f = document.getElementById('book-category-filter');
             const m = document.getElementById('modal-book-category');
+            const nf = document.getElementById('newspaper-category-filter');
+            const nm = document.getElementById('modal-paper-category');
             const opts = state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            
             if (f && (forceRefresh || f.options.length <= 1)) {
                 const currentVal = f.value;
                 f.innerHTML = `<option value="">All Categories</option>${opts}`;
@@ -386,6 +390,16 @@ async function fetchCategories(forceRefresh = false) {
                 const currentVal = m.value;
                 m.innerHTML = `<option value="">Select Category</option>${opts}`;
                 if (currentVal) m.value = currentVal;
+            }
+            if (nf && (forceRefresh || nf.options.length <= 1)) {
+                const currentVal = nf.value;
+                nf.innerHTML = `<option value="">All Categories</option>${opts}`;
+                nf.value = currentVal;
+            }
+            if (nm) {
+                const currentVal = nm.value;
+                nm.innerHTML = `<option value="">Select Category</option>${opts}`;
+                if (currentVal) nm.value = currentVal;
             }
         }
     } catch (e) { console.error('Categories error:', e); }
@@ -409,6 +423,12 @@ async function submitAddCategory(e) {
     if (!name || name.trim() === '') {
         showToast('Please enter a category name', 'error');
         return;
+    }
+
+    const btn = e.target.querySelector('button[type="submit"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Adding...';
     }
 
     try {
@@ -438,6 +458,11 @@ async function submitAddCategory(e) {
     } catch (err) {
         console.error('Submit category error:', err);
         showToast('Server error while adding category', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = 'Add Category';
+        }
     }
 }
 
@@ -501,6 +526,13 @@ async function saveBookForm(e) {
         ebook_url:  document.getElementById('modal-book-url').value || '/pdf-sample.pdf',
         is_visible: document.getElementById('modal-book-visible').checked ? 1 : 0
     };
+    
+    const btn = e.target.querySelector('button[type="submit"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Saving...';
+    }
+
     try {
         const res  = await fetch(`${API_BASE}/books`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
         const data = await res.json();
@@ -510,6 +542,12 @@ async function saveBookForm(e) {
             renderBooks();
         } else showToast(data.message || 'Save failed', 'error');
     } catch (err) { showToast(err.message || 'Operation failed', 'error'); }
+    finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = 'Save Book';
+        }
+    }
 }
 
 async function toggleBookVisibility(id, val) {
@@ -533,13 +571,15 @@ async function deleteBook(id) {
 // 5. NEWSPAPERS
 // ==========================================
 async function renderNewspapers() {
+    await fetchCategories();
     const dateEl = document.getElementById('newspaper-date-filter');
     if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
     const date = dateEl?.value || '';
     const q    = document.getElementById('newspaper-search-input')?.value || '';
+    const cat  = document.getElementById('newspaper-category-filter')?.value || '';
 
     try {
-        const res  = await fetch(`${API_BASE}/newspapers?date=${date}&q=${encodeURIComponent(q)}`);
+        const res  = await fetch(`${API_BASE}/newspapers?date=${date}&q=${encodeURIComponent(q)}&category=${cat}`);
         const data = await res.json();
         if (!data.success) return;
         state.newspapers = data.newspapers;
@@ -556,6 +596,9 @@ async function renderNewspapers() {
                             <small style="color:var(--text-light);"><i class="fa-regular fa-calendar me-1"></i>${np.publish_date}</small>
                         </div>
                         <h5 class="fw-bold mb-3" style="font-family:'Playfair Display',serif;color:var(--dark-roast);">${np.title}</h5>
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <span class="badge" style="background:var(--soft-linen);color:var(--warm-walnut);">${np.category_name || 'General News'}</span>
+                        </div>
                         <div class="d-flex align-items-center justify-content-between pt-2 border-top">
                             <button class="btn btn-sm btn-lotus-secondary" onclick="openBookReader('${esc(np.title)}','${np.file_url}')">
                                 <i class="fa-solid fa-book-open me-1"></i> Read Paper
@@ -579,8 +622,16 @@ async function saveNewspaperForm(e) {
     const payload = {
         title:        document.getElementById('modal-paper-title').value,
         file_url:     document.getElementById('modal-paper-url').value || '/pdf-sample.pdf',
-        publish_date: document.getElementById('modal-paper-date').value
+        publish_date: document.getElementById('modal-paper-date').value,
+        category_id:  document.getElementById('modal-paper-category').value
     };
+    
+    const btn = e.target.querySelector('button[type="submit"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Saving...';
+    }
+
     try {
         const res  = await fetch(`${API_BASE}/newspapers`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
         const data = await res.json();
@@ -590,6 +641,12 @@ async function saveNewspaperForm(e) {
             renderNewspapers();
         } else showToast(data.message || 'Upload failed', 'error');
     } catch (err) { showToast(err.message || 'Upload failed', 'error'); }
+    finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = 'Save Newspaper';
+        }
+    }
 }
 
 async function deleteNewspaper(id) {
@@ -632,9 +689,9 @@ async function renderNotes() {
                             <div class="d-flex gap-1">
                                 <button class="btn btn-xs btn-lotus-secondary" onclick="openNoteReader(${n.id})"><i class="fa-solid fa-book-open me-1"></i>Read</button>
                                 ${state.currentUser.role==='admin' && n.status==='pending' ? `
-                                    <button class="btn btn-xs btn-success" onclick="approveNoteAction(${n.id})"><i class="fa-solid fa-check"></i></button>
+                                    <button class="btn btn-xs btn-success me-1" onclick="approveNoteAction(${n.id})"><i class="fa-solid fa-check"></i></button>
                                     <button class="btn btn-xs btn-outline-danger" onclick="rejectNoteAction(${n.id})"><i class="fa-solid fa-xmark"></i></button>` : ''}
-                                ${(state.currentUser.role==='admin' || n.author_id===state.currentUser.id) ? `
+                                ${(state.currentUser.role==='admin' || (n.author_id===state.currentUser.id && n.status !== 'approved')) ? `
                                     <button class="btn btn-xs btn-outline-secondary" onclick="deleteNote(${n.id})"><i class="fa-solid fa-trash"></i></button>` : ''}
                             </div>
                         </div>
@@ -710,9 +767,10 @@ async function rejectNoteAction(id) {
 async function deleteNote(id) {
     if (!confirm('Delete this note?')) return;
     try {
-        const res  = await fetch(`${API_BASE}/notes/${id}`, { method:'DELETE' });
+        const res  = await fetch(`${API_BASE}/notes/${id}?user_id=${state.currentUser.id}&role=${state.currentUser.role}`, { method:'DELETE' });
         const data = await res.json();
         if (data.success) { showToast('Deleted', 'success'); renderNotes(); }
+        else { showToast(data.message || 'Failed', 'error'); }
     } catch (err) { showToast('Failed', 'error'); }
 }
 
@@ -1029,7 +1087,7 @@ async function renderSettingsCategories() {
     }
     list.innerHTML = state.categories.map(c => `
         <tr>
-            <td class="fw-bold">${c.name} <br><small class="text-muted fw-normal">${c.book_count || 0} E-Books</small></td>
+            <td class="fw-bold">${c.name} <br><small class="text-muted fw-normal">${c.book_count || 0} E-Books | ${c.news_count || 0} Newspapers</small></td>
             <td class="text-center">
                 <button class="btn btn-xs" style="background:#fce8e8;color:#d9534f;border:1px solid #d9534f;" onclick="deleteSettingsCategory(${c.id}, '${c.name.replace(/'/g, "\\'")}')" title="Delete">
                     <i class="fa-solid fa-trash"></i>
@@ -1167,4 +1225,337 @@ function showToast(message, type = 'info') {
             </div>
         </div>`);
     setTimeout(() => { const el = document.getElementById(id); if (el) el.remove(); }, 4500);
+}
+
+// ==========================================
+// 14. ONLINE QUIZ SYSTEM
+// ==========================================
+
+async function renderQuizzes() {
+    await fetchCategories();
+    // Populate quiz category filter
+    const catF = document.getElementById('quiz-category-filter');
+    if (catF && catF.options.length <= 1) {
+        catF.innerHTML = '<option value="">All Categories</option>' + state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+    
+    // reset views
+    document.getElementById('quiz-list-container').style.display = 'block';
+    document.getElementById('quiz-take-container').style.display = 'none';
+    document.getElementById('quiz-admin-container').style.display = 'none';
+
+    try {
+        const res = await fetch(`${API_BASE}/quizzes`);
+        const data = await res.json();
+        if(!data.success) return;
+        
+        let quizzes = data.quizzes;
+        if(catF && catF.value) quizzes = quizzes.filter(q => q.category_id == catF.value);
+        
+        const grid = document.getElementById('quizzes-grid');
+        grid.innerHTML = quizzes.length === 0 
+            ? `<div class="col-12 text-center text-muted py-5"><i class="fa-solid fa-graduation-cap fa-3x mb-3" style="opacity:0.3;"></i><h5>No Quizzes Found</h5></div>`
+            : quizzes.map(q => `
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="lotus-card p-4 h-100 d-flex flex-column">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="badge bg-secondary">${q.category_name || 'General'}</span>
+                            <span class="badge ${q.difficulty === 'Hard' ? 'bg-danger' : q.difficulty === 'Medium' ? 'bg-warning text-dark' : 'bg-success'}">${q.difficulty}</span>
+                        </div>
+                        <h5 class="fw-bold" style="color:var(--dark-roast);">${q.title}</h5>
+                        <p class="text-muted small flex-grow-1">${q.description || ''}</p>
+                        <div class="d-flex align-items-center mb-3 text-muted small fw-bold">
+                            <i class="fa-regular fa-clock me-1"></i> ${q.time_limit} mins
+                        </div>
+                        <div class="d-flex justify-content-between pt-3 border-top mt-auto">
+                            ${state.currentUser.role === 'admin' || state.currentUser.role === 'editor' 
+                                ? `<button class="btn btn-sm btn-outline-primary w-100 me-2" onclick="viewAdminQuiz(${q.id})"><i class="fa-solid fa-gear me-1"></i>Manage</button>
+                                   <button class="btn btn-sm btn-outline-danger" onclick="deleteQuiz(${q.id})"><i class="fa-solid fa-trash"></i></button>`
+                                : `<button class="btn btn-sm btn-lotus-primary w-100" onclick="startQuiz(${q.id})"><i class="fa-solid fa-play me-1"></i>Attempt Quiz</button>`
+                            }
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+    } catch(err) { showToast('Failed to load quizzes', 'error'); }
+}
+
+function openCreateQuizModal() {
+    const catM = document.getElementById('modal-quiz-category');
+    if (catM && catM.options.length <= 1) {
+        catM.innerHTML = '<option value="">Select Category</option>' + state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+    document.getElementById('create-quiz-form').reset();
+    new bootstrap.Modal(document.getElementById('modalCreateQuiz')).show();
+}
+
+async function submitCreateQuiz(e) {
+    e.preventDefault();
+    const payload = {
+        title: document.getElementById('modal-quiz-title').value,
+        description: document.getElementById('modal-quiz-desc').value,
+        category_id: document.getElementById('modal-quiz-category').value,
+        time_limit: document.getElementById('modal-quiz-time').value,
+        difficulty: document.getElementById('modal-quiz-diff').value,
+        created_by: state.currentUser.id
+    };
+    
+    try {
+        const res = await fetch(`${API_BASE}/quizzes`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+        const data = await res.json();
+        if(data.success) {
+            showToast('Quiz created', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('modalCreateQuiz')).hide();
+            renderQuizzes();
+        } else { showToast('Error creating quiz', 'error'); }
+    } catch(err) { showToast('Failed to save quiz', 'error'); }
+}
+
+async function deleteQuiz(id) {
+    if(!confirm('Are you sure you want to delete this quiz?')) return;
+    try {
+        const res = await fetch(`${API_BASE}/quizzes/${id}`, { method:'DELETE' });
+        const data = await res.json();
+        if(data.success) { showToast('Quiz deleted', 'success'); renderQuizzes(); }
+    } catch(err) { showToast('Failed to delete', 'error'); }
+}
+
+async function viewAdminQuiz(id) {
+    try {
+        const res = await fetch(`${API_BASE}/quizzes/${id}?role=admin`);
+        const data = await res.json();
+        if(!data.success) return;
+        
+        const qz = data.quiz;
+        document.getElementById('quiz-list-container').style.display = 'none';
+        document.getElementById('quiz-admin-container').style.display = 'block';
+        document.getElementById('admin-quiz-title').textContent = qz.title + " (Questions: " + qz.questions.length + ")";
+        document.getElementById('modal-q-quiz-id').value = qz.id;
+        
+        const qHTML = qz.questions.length === 0 ? '<p class="text-muted">No questions added yet.</p>' : qz.questions.map((q, idx) => `
+            <div class="border rounded p-3 mb-3 bg-white shadow-sm">
+                <div class="d-flex justify-content-between">
+                    <h6 class="fw-bold m-0">Q${idx+1}. ${q.question_text}</h6>
+                    <div>
+                        <span class="badge bg-secondary me-2">${q.question_type}</span>
+                        <span class="badge bg-info me-2">${q.marks} Marks</span>
+                        <button class="btn btn-xs btn-outline-danger" onclick="deleteQuestion(${q.id}, ${qz.id})"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+                <div class="mt-2 text-muted small">
+                    ${q.options.map(o => `<div class="${o.is_correct ? 'text-success fw-bold' : ''}">- ${o.option_text} ${o.is_correct ? '<i class="fa-solid fa-check"></i>' : ''}</div>`).join('')}
+                </div>
+            </div>
+        `).join('');
+        
+        document.getElementById('admin-quiz-questions').innerHTML = qHTML;
+    } catch(err) { showToast('Failed to load quiz details', 'error'); }
+}
+
+function closeAdminQuizView() {
+    renderQuizzes();
+}
+
+function openAddQuestionModal() {
+    document.getElementById('add-question-form').reset();
+    toggleQuestionOptions();
+    new bootstrap.Modal(document.getElementById('modalAddQuestion')).show();
+}
+
+function toggleQuestionOptions() {
+    const type = document.getElementById('modal-q-type').value;
+    const container = document.getElementById('options-list');
+    
+    if(type === 'MCQ') {
+        container.innerHTML = `
+            ${[1,2,3,4].map(i => `
+                <div class="input-group mb-2">
+                    <div class="input-group-text"><input class="form-check-input mt-0" type="radio" name="correct_opt" value="${i}" ${i===1?'required':''}></div>
+                    <input type="text" class="form-control" id="opt_text_${i}" placeholder="Option ${i} text" ${i<=2?'required':''}>
+                </div>
+            `).join('')}
+        `;
+    } else if (type === 'True/False') {
+        container.innerHTML = `
+            <div class="form-check"><input class="form-check-input" type="radio" name="correct_opt" value="True" required><label class="form-check-label">True</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="correct_opt" value="False"><label class="form-check-label">False</label></div>
+        `;
+    } else if (type === 'Short Answer') {
+        container.innerHTML = `
+            <input type="text" class="form-control" id="opt_text_short" placeholder="Enter exact correct answer text" required>
+        `;
+    }
+}
+
+async function submitAddQuestion(e) {
+    e.preventDefault();
+    const quizId = document.getElementById('modal-q-quiz-id').value;
+    const type = document.getElementById('modal-q-type').value;
+    
+    let options = [];
+    if(type === 'MCQ') {
+        const selectedRadio = document.querySelector('input[name="correct_opt"]:checked');
+        if(!selectedRadio) { showToast('Select correct option', 'error'); return; }
+        const corrVal = parseInt(selectedRadio.value);
+        for(let i=1; i<=4; i++) {
+            const txt = document.getElementById('opt_text_'+i).value;
+            if(txt.trim()) options.push({ option_text: txt, is_correct: (i === corrVal) });
+        }
+    } else if(type === 'True/False') {
+        const corrVal = document.querySelector('input[name="correct_opt"]:checked').value;
+        options.push({ option_text: 'True', is_correct: (corrVal === 'True') });
+        options.push({ option_text: 'False', is_correct: (corrVal === 'False') });
+    } else if(type === 'Short Answer') {
+        const txt = document.getElementById('opt_text_short').value;
+        options.push({ option_text: txt, is_correct: true });
+    }
+    
+    const payload = {
+        question_text: document.getElementById('modal-q-text').value,
+        question_type: type,
+        marks: parseInt(document.getElementById('modal-q-marks').value),
+        options: options
+    };
+    
+    try {
+        const res = await fetch(`${API_BASE}/quizzes/${quizId}/questions`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+        const data = await res.json();
+        if(data.success) {
+            showToast('Question Added', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('modalAddQuestion')).hide();
+            viewAdminQuiz(quizId);
+        } else showToast('Error adding question', 'error');
+    } catch(err) { showToast('Server error', 'error'); }
+}
+
+async function deleteQuestion(qId, quizId) {
+    if(!confirm('Delete this question?')) return;
+    try {
+        const res = await fetch(`${API_BASE}/questions/${qId}`, { method:'DELETE' });
+        const data = await res.json();
+        if(data.success) { showToast('Question deleted', 'success'); viewAdminQuiz(quizId); }
+    } catch(err) { showToast('Failed to delete', 'error'); }
+}
+
+// ---------------- Quiz Taking Logic ----------------
+
+let currentQuizState = null;
+let quizTimerInterval = null;
+
+async function startQuiz(quizId) {
+    try {
+        const res = await fetch(`${API_BASE}/quizzes/${quizId}?role=${state.currentUser.role}`);
+        const data = await res.json();
+        if(!data.success) return;
+        
+        currentQuizState = data.quiz;
+        if(currentQuizState.questions.length === 0) {
+            showToast('This quiz has no questions yet.', 'warning');
+            return;
+        }
+        
+        // Setup State
+        currentQuizState.answers = {}; // qId -> answer payload
+        currentQuizState.timeLeft = currentQuizState.time_limit * 60; // seconds
+        
+        document.getElementById('quiz-list-container').style.display = 'none';
+        document.getElementById('quiz-take-container').style.display = 'block';
+        document.getElementById('take-quiz-title').textContent = currentQuizState.title;
+        
+        renderQuizQuestions();
+        startQuizTimer();
+    } catch(err) { showToast('Failed to load quiz', 'error'); }
+}
+
+function renderQuizQuestions() {
+    const container = document.getElementById('take-quiz-questions');
+    let html = '';
+    currentQuizState.questions.forEach((q, i) => {
+        html += `<div class="mb-4 border-bottom pb-4">
+            <h5 class="fw-bold mb-3">${i+1}. ${q.question_text} <span class="badge bg-info ms-2 fs-6" style="vertical-align:middle">${q.marks} Marks</span></h5>`;
+        
+        if(q.question_type === 'MCQ' || q.question_type === 'True/False') {
+            q.options.forEach(opt => {
+                html += `<div class="form-check mb-2 fs-5">
+                    <input class="form-check-input" type="radio" name="q_${q.id}" value="${opt.id}" onchange="saveAnswer(${q.id}, ${opt.id}, null)">
+                    <label class="form-check-label">${opt.option_text}</label>
+                </div>`;
+            });
+        } else if(q.question_type === 'Short Answer') {
+            html += `<input type="text" class="form-control form-control-lg" placeholder="Type your answer here..." oninput="saveAnswer(${q.id}, null, this.value)">`;
+        }
+        html += `</div>`;
+    });
+    container.innerHTML = html;
+    updateQuizProgress();
+}
+
+function saveAnswer(qId, optId, shortText) {
+    currentQuizState.answers[qId] = { question_id: qId, option_id: optId, short_answer: shortText };
+    updateQuizProgress();
+}
+
+function updateQuizProgress() {
+    const total = currentQuizState.questions.length;
+    const answered = Object.keys(currentQuizState.answers).length;
+    const pct = Math.round((answered / total) * 100);
+    document.getElementById('take-quiz-progress').style.width = pct + '%';
+}
+
+function startQuizTimer() {
+    clearInterval(quizTimerInterval);
+    const timerEl = document.getElementById('take-quiz-timer');
+    
+    quizTimerInterval = setInterval(() => {
+        currentQuizState.timeLeft--;
+        if(currentQuizState.timeLeft <= 0) {
+            clearInterval(quizTimerInterval);
+            timerEl.textContent = "00:00";
+            showToast("Time's up! Auto-submitting...", "warning");
+            submitQuiz(true); // true = auto submit
+        } else {
+            const m = Math.floor(currentQuizState.timeLeft / 60).toString().padStart(2, '0');
+            const s = (currentQuizState.timeLeft % 60).toString().padStart(2, '0');
+            timerEl.textContent = `${m}:${s}`;
+            if(currentQuizState.timeLeft < 60) timerEl.classList.add('text-danger', 'animate__animated', 'animate__flash');
+        }
+    }, 1000);
+}
+
+function cancelQuiz() {
+    if(!confirm('Are you sure you want to cancel? Your progress will be lost.')) return;
+    clearInterval(quizTimerInterval);
+    currentQuizState = null;
+    renderQuizzes();
+}
+
+async function submitQuiz(autoSubmit = false) {
+    if(!autoSubmit) {
+        const total = currentQuizState.questions.length;
+        const answered = Object.keys(currentQuizState.answers).length;
+        if(answered < total) {
+            if(!confirm(`You have only answered ${answered}/${total} questions. Submit anyway?`)) return;
+        } else {
+            if(!confirm('Submit your final answers?')) return;
+        }
+    }
+    
+    clearInterval(quizTimerInterval);
+    const answersArr = Object.values(currentQuizState.answers);
+    
+    try {
+        const res = await fetch(`${API_BASE}/quizzes/${currentQuizState.id}/submit`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ user_id: state.currentUser.id, answers: answersArr })
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            document.getElementById('result-score').textContent = data.score;
+            document.getElementById('result-total').textContent = data.total_marks;
+            new bootstrap.Modal(document.getElementById('modalQuizResult')).show();
+            currentQuizState = null;
+            renderQuizzes();
+        } else { showToast('Submission failed', 'error'); }
+    } catch(err) { showToast('Error submitting quiz', 'error'); }
 }
