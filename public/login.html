@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOTUS Library System — Login</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="description" content="Login to LOTUS Library System — Digital repository, E-Books, and Research Hub.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Renamed CSS -->
+    <link rel="stylesheet" href="css/lotus-sage.css">
+
+    <style>
+        /* ============================
+           LOGIN PAGE — SCHOLARLY SAGE
+           ============================ */
+        :root {
+            --dark-roast:    #1E2320;
+            --dark-roast-2:  #151917;
+            --warm-walnut:   #3D4B3E;
+            --walnut-light:  #6F7F64;
+            --parchment-tan: #C8D0B7;
+            --soft-linen:    #E4E8D9;
+            --linen-light:   #edeee3;
+            --cream-page:    #F5F3E6;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .login-bg {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--dark-roast-2) 0%, var(--dark-roast) 50%, var(--warm-walnut) 100%);
+            position: relative;
+            overflow: hidden;
+            padding: 24px;
+        }
+
+        /* Decorative background pattern */
+        .login-bg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(200, 208, 183,0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(61, 75, 62,0.15) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(30, 35, 32,0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* Book shelves decorative lines */
+        .login-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 60px,
+                rgba(200, 208, 183,0.05) 60px,
+                rgba(200, 208, 183,0.05) 62px
+            );
+            pointer-events: none;
+        }
+
+        /* Card */
+        .login-card {
+            position: relative;
+            z-index: 1;
+            background: var(--cream-page);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow:
+                0 25px 60px rgba(21, 25, 23,0.5),
+                0 0 0 1px rgba(200, 208, 183,0.25);
+            overflow: hidden;
+        }
+
+        /* Header band */
+        .login-card-header {
+            background: linear-gradient(135deg, var(--dark-roast-2) 0%, var(--dark-roast) 100%);
+            padding: 36px 32px 28px;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--parchment-tan);
+        }
+
+        /* Ornamental top line */
+        .login-card-header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--parchment-tan), transparent);
+        }
+
+        .login-logo {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, var(--parchment-tan), var(--warm-walnut));
+            border-radius: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            color: #fff;
+            margin-bottom: 14px;
+            box-shadow:
+                0 8px 24px rgba(0,0,0,0.35),
+                0 0 0 3px rgba(200, 208, 183,0.25);
+            border: 2px solid rgba(255,255,255,0.15);
+        }
+
+        .login-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: var(--cream-page);
+            margin: 0;
+            letter-spacing: 2px;
+        }
+
+        .login-subtitle {
+            font-size: 0.72rem;
+            color: var(--parchment-tan);
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* Ornamental divider */
+        .login-divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 32px 20px;
+        }
+        .login-divider::before,
+        .login-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--soft-linen);
+        }
+        .login-divider-icon {
+            color: var(--parchment-tan);
+            font-size: 0.75rem;
+        }
+
+        /* Form area */
+        .login-body {
+            padding: 28px 32px 32px;
+        }
+
+        .login-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--dark-roast);
+            letter-spacing: 0.3px;
+            margin-bottom: 6px;
+        }
+
+        .login-input-group .input-group-text {
+            background: var(--linen-light);
+            border: 1px solid var(--soft-linen);
+            border-right: none;
+            color: var(--warm-walnut);
+        }
+
+        .login-input-group .form-control,
+        .login-input-group .form-select {
+            background: var(--linen-light);
+            border: 1px solid var(--soft-linen);
+            border-left: none;
+            color: var(--dark-roast);
+            font-size: 0.9rem;
+            padding: 10px 14px;
+        }
+
+        .login-input-group .form-control:focus,
+        .login-input-group .form-select:focus {
+            background: var(--cream-page);
+            border-color: var(--parchment-tan);
+            box-shadow: 0 0 0 3px rgba(200, 208, 183,0.2);
+            outline: none;
+        }
+
+        .login-input-group .form-select {
+            border-left: 1px solid var(--soft-linen);
+        }
+
+        /* Role select — no input-group prefix */
+        .login-select {
+            background: var(--linen-light);
+            border: 1px solid var(--soft-linen);
+            color: var(--dark-roast);
+            font-size: 0.9rem;
+            padding: 10px 14px;
+            border-radius: 8px;
+            width: 100%;
+        }
+        .login-select:focus {
+            border-color: var(--parchment-tan);
+            box-shadow: 0 0 0 3px rgba(200, 208, 183,0.2);
+            outline: none;
+        }
+
+        /* Submit button */
+        .btn-login {
+            background: linear-gradient(135deg, var(--dark-roast) 0%, var(--warm-walnut) 100%);
+            color: var(--cream-page);
+            border: none;
+            border-radius: 10px;
+            padding: 13px 24px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 6px 20px rgba(30, 35, 32,0.35);
+        }
+        .btn-login:hover {
+            background: linear-gradient(135deg, var(--dark-roast-2) 0%, var(--dark-roast) 100%);
+            box-shadow: 0 10px 28px rgba(21, 25, 23,0.45);
+            transform: translateY(-2px);
+        }
+        .btn-login:active { transform: translateY(0); }
+
+        /* Change password link */
+        .change-pass-link {
+            font-size: 0.78rem;
+            color: var(--warm-walnut);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+        .change-pass-link:hover { color: var(--dark-roast); text-decoration: underline; }
+
+        /* Alert */
+        .login-alert {
+            background: rgba(201,80,78,0.1);
+            border: 1px solid rgba(201,80,78,0.3);
+            border-left: 4px solid #c9504e;
+            color: #8b2020;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 18px;
+        }
+
+        /* Footer note */
+        .login-footer-note {
+            text-align: center;
+            font-size: 0.72rem;
+            color: var(--parchment-tan);
+            padding: 14px 20px 16px;
+            background: var(--dark-roast);
+            border-top: 1px solid rgba(200, 208, 183,0.15);
+        }
+
+        /* Change Password Modal */
+        .modal-header-login {
+            background: linear-gradient(135deg, var(--dark-roast-2), var(--dark-roast));
+            border-bottom: 2px solid var(--parchment-tan);
+        }
+        .modal-header-login .modal-title { color: var(--cream-page); font-family: 'Playfair Display', serif; }
+
+        /* Decorative floating icons */
+        .deco-icon {
+            position: absolute;
+            font-size: 4rem;
+            opacity: 0.04;
+            color: var(--soft-linen);
+            pointer-events: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-bg">
+    <!-- Decorative floating icons -->
+    <i class="fa-solid fa-book deco-icon" style="top:8%;left:6%;font-size:5rem;transform:rotate(-15deg);"></i>
+    <i class="fa-solid fa-scroll deco-icon" style="top:15%;right:8%;font-size:3.5rem;transform:rotate(12deg);"></i>
+    <i class="fa-solid fa-graduation-cap deco-icon" style="bottom:12%;left:10%;font-size:4rem;transform:rotate(8deg);"></i>
+    <i class="fa-solid fa-bookmark deco-icon" style="bottom:20%;right:6%;font-size:3rem;transform:rotate(-10deg);"></i>
+    <i class="fa-solid fa-feather-pointed deco-icon" style="top:50%;left:4%;font-size:3rem;transform:rotate(-30deg);"></i>
+    <i class="fa-solid fa-glasses deco-icon" style="top:40%;right:5%;font-size:2.8rem;"></i>
+
+    <div class="login-card">
+        <!-- Header -->
+        <div class="login-card-header">
+            <div class="login-logo">
+                <i class="fa-solid fa-spa"></i>
+            </div>
+            <h1 class="login-title">LOTUS</h1>
+            <div class="login-subtitle"><i class="fa-solid fa-book-bookmark me-1"></i>Library Management System</div>
+        </div>
+
+        <!-- Body -->
+        <div class="login-body">
+            <div id="login-alert" class="login-alert" style="display:none;"></div>
+
+            <form id="login-form" onsubmit="handleLogin(event)" autocomplete="off">
+                <!-- Email -->
+                <div class="mb-3">
+                    <label class="login-label">Email Address</label>
+                    <div class="input-group login-input-group">
+                        <span class="input-group-text"><i class="fa-solid fa-envelope" style="font-size:0.85rem;"></i></span>
+                        <input type="email" id="login-email" class="form-control" placeholder="Enter your email id" required autocomplete="off">
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="login-label m-0">Password</label>
+                        <a href="#" class="change-pass-link" onclick="openChangePassModal(event)">
+                            <i class="fa-solid fa-key me-1" style="font-size:0.7rem;"></i>Change Password?
+                        </a>
+                    </div>
+                    <div class="input-group login-input-group">
+                        <span class="input-group-text"><i class="fa-solid fa-lock" style="font-size:0.85rem;"></i></span>
+                        <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="off">
+                        <button type="button" class="btn" style="background:var(--linen-light);border:1px solid var(--soft-linen);border-left:none;color:var(--warm-walnut);" onclick="togglePasswordVisibility()">
+                            <i class="fa-regular fa-eye" id="eye-icon" style="font-size:0.85rem;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Role -->
+                <div class="mb-4">
+                    <label class="login-label">Login Portal</label>
+                    <div class="input-group login-input-group">
+                        <span class="input-group-text"><i class="fa-solid fa-user-shield" style="font-size:0.85rem;"></i></span>
+                        <select id="login-role" class="form-select">
+                            <option value="admin">Admin Portal</option>
+                            <option value="editor">Editor Portal</option>
+                            <option value="member" selected>Member Portal</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In to LOTUS
+                </button>
+                <div class="text-center mt-3">
+                    <a href="#" class="change-pass-link" onclick="openRegisterModal(event)" style="font-size:0.85rem;">
+                        <i class="fa-solid fa-user-plus me-1"></i>New to LOTUS? Register here
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer note -->
+        <div class="login-footer-note">
+            <i class="fa-solid fa-shield-halved me-1"></i>All passwords are encrypted using BCrypt.
+            &nbsp;·&nbsp; LOTUS Library System &copy; 2026
+        </div>
+    </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL (available on login page for any user) -->
+<div class="modal fade" id="modalChangePassLogin" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border:1px solid var(--soft-linen);border-radius:16px;overflow:hidden;">
+            <div class="modal-header modal-header-login">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-key me-2" style="color:var(--parchment-tan);"></i>Change Password
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="modal-change-pass-form" onsubmit="handleChangePassword(event)">
+                <div class="modal-body" style="background:var(--cream-page);padding:24px;">
+                    <div class="mb-3">
+                        <label class="login-label">Account Email *</label>
+                        <div class="input-group login-input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-envelope" style="font-size:0.85rem;"></i></span>
+                            <input type="email" id="chpass-email" class="form-control" placeholder="your@email.com" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="login-label">Current Password *</label>
+                        <div class="input-group login-input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-lock" style="font-size:0.85rem;"></i></span>
+                            <input type="password" id="chpass-old" class="form-control" placeholder="Current password" required>
+                        </div>
+                    </div>
+                    <div class="mb-1">
+                        <label class="login-label">New Password *</label>
+                        <div class="input-group login-input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-lock-open" style="font-size:0.85rem;"></i></span>
+                            <input type="password" id="chpass-new" class="form-control" placeholder="New encrypted password" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="background:var(--linen-light);border-top:1px solid var(--soft-linen);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn" style="background:linear-gradient(135deg,var(--dark-roast),var(--warm-walnut));color:var(--cream-page);font-weight:600;border:none;">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Update Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    </div>
+</div>
+
+<!-- REGISTER MODAL -->
+<div class="modal fade" id="modalRegisterLogin" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border:1px solid var(--soft-linen);border-radius:16px;overflow:hidden;">
+            <div class="modal-header modal-header-login">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-user-plus me-2" style="color:var(--parchment-tan);"></i>Member Registration
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="modal-register-form" onsubmit="handleRegister(event)">
+                <div class="modal-body" style="background:var(--cream-page);padding:24px;">
+                    <div class="mb-3">
+                        <label class="login-label">Full Name *</label>
+                        <div class="input-group login-input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-user" style="font-size:0.85rem;"></i></span>
+                            <input type="text" id="reg-name" class="form-control" placeholder="John Doe" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="login-label">Email Address *</label>
+                        <div class="input-group login-input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-envelope" style="font-size:0.85rem;"></i></span>
+                            <input type="email" id="reg-email" class="form-control" placeholder="your@email.com" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="login-label">Phone Number *</label>
+                        <div class="input-group login-input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-phone" style="font-size:0.85rem;"></i></span>
+                            <input type="text" id="reg-phone" class="form-control" placeholder="Required" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="login-label">Address *</label>
+                        <div class="input-group login-input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-map-location-dot" style="font-size:0.85rem;"></i></span>
+                            <input type="text" id="reg-address" class="form-control" placeholder="Required" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="login-label">Password *</label>
+                        <div class="input-group login-input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-lock" style="font-size:0.85rem;"></i></span>
+                            <input type="password" id="reg-pass" class="form-control" placeholder="Choose a secure password" required>
+                        </div>
+                    </div>
+                    <div class="mb-1">
+                        <label class="login-label">Confirm Password *</label>
+                        <div class="input-group login-input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-check-double" style="font-size:0.85rem;"></i></span>
+                            <input type="password" id="reg-pass-confirm" class="form-control" placeholder="Type password again" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="background:var(--linen-light);border-top:1px solid var(--soft-linen);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="btn-register-submit" class="btn" style="background:linear-gradient(135deg,var(--dark-roast),var(--warm-walnut));color:var(--cream-page);font-weight:600;border:none;">
+                        <i class="fa-solid fa-check me-1"></i>Create Account
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let pwVisible = false;
+
+    function togglePasswordVisibility() {
+        const input = document.getElementById('login-password');
+        const icon  = document.getElementById('eye-icon');
+        pwVisible = !pwVisible;
+        input.type = pwVisible ? 'text' : 'password';
+        icon.className = pwVisible ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+    }
+
+    function openChangePassModal(e) {
+        e && e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        if (email) document.getElementById('chpass-email').value = email;
+        new bootstrap.Modal(document.getElementById('modalChangePassLogin')).show();
+    }
+
+    async function handleChangePassword(e) {
+        e.preventDefault();
+        const email       = document.getElementById('chpass-email').value;
+        const oldPassword = document.getElementById('chpass-old').value;
+        const newPassword = document.getElementById('chpass-new').value;
+
+        try {
+            const res  = await fetch('/api/auth/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, oldPassword, newPassword })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('✅ Password updated and encrypted! Please log in with your new password.');
+                bootstrap.Modal.getInstance(document.getElementById('modalChangePassLogin')).hide();
+                document.getElementById('login-password').value = newPassword;
+                document.getElementById('login-email').value    = email;
+            } else {
+                alert('❌ ' + (data.message || 'Update failed'));
+            }
+        } catch (err) {
+            alert('Connection error: ' + err.message);
+        }
+    }
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        const email    = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        const role     = document.getElementById('login-role').value;
+        const alertEl  = document.getElementById('login-alert');
+        alertEl.style.display = 'none';
+
+        // Button loading state
+        const btn = document.querySelector('.btn-login');
+        btn.disabled     = true;
+        btn.innerHTML    = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Signing in…';
+
+        try {
+            const res  = await fetch('/api/auth/login', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ email, password, role })
+            });
+            const data = await res.json();
+            if (data.success) {
+                localStorage.setItem('lotus_token', data.token);
+                localStorage.setItem('lotus_user',  JSON.stringify(data.user));
+                btn.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i>Redirecting…';
+                setTimeout(() => { window.location.href = 'dashboard.html'; }, 300);
+            } else {
+                alertEl.textContent    = '⚠️ ' + (data.message || 'Login failed');
+                alertEl.style.display  = 'block';
+                btn.disabled           = false;
+                btn.innerHTML          = '<i class="fa-solid fa-right-to-bracket me-2"></i>Sign In to LOTUS';
+            }
+        } catch (err) {
+            alertEl.textContent   = '⚠️ Server connection error. Please try again.';
+            alertEl.style.display = 'block';
+            btn.disabled          = false;
+            btn.innerHTML         = '<i class="fa-solid fa-right-to-bracket me-2"></i>Sign In to LOTUS';
+        }
+    }
+
+    function openRegisterModal(e) {
+        e && e.preventDefault();
+        document.getElementById('modal-register-form').reset();
+        new bootstrap.Modal(document.getElementById('modalRegisterLogin')).show();
+    }
+
+    async function handleRegister(e) {
+        e.preventDefault();
+        
+        const password = document.getElementById('reg-pass').value;
+        const confirmPassword = document.getElementById('reg-pass-confirm').value;
+        if (password !== confirmPassword) {
+            alert('❌ Passwords do not match. Please try again.');
+            return;
+        }
+
+        const btn = document.getElementById('btn-register-submit');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Registering...';
+
+        const payload = {
+            name: document.getElementById('reg-name').value,
+            email: document.getElementById('reg-email').value,
+            phone: document.getElementById('reg-phone').value,
+            address: document.getElementById('reg-address').value,
+            password: password,
+            role: 'member'
+        };
+
+        try {
+            const res = await fetch('/api/members', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(`✅ Registration successful!\nYour Member ID: ${data.member.membership_id}\n\nYou can now log in.`);
+                bootstrap.Modal.getInstance(document.getElementById('modalRegisterLogin')).hide();
+                document.getElementById('login-email').value = payload.email;
+                document.getElementById('login-password').value = '';
+                document.getElementById('login-role').value = 'member';
+            } else {
+                alert('❌ Registration failed: ' + (data.message || 'Unknown error'));
+            }
+        } catch (err) {
+            alert('Connection error: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check me-1"></i>Create Account';
+        }
+    }
+</script>
+</body>
+</html>

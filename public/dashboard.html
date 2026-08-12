@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOTUS Library System</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/lotus-sage.css">
+</head>
+<body oncontextmenu="return false;">
+
+<!-- TOP HEADER -->
+<header class="lotus-header">
+    <div class="brand-wrapper">
+        <div class="brand-logo"><i class="fa-solid fa-spa"></i></div>
+        <div>
+            <h1 class="brand-title">LOTUS</h1>
+            <div class="brand-subtitle">Library System</div>
+        </div>
+    </div>
+
+    <div class="header-search d-none d-lg-block">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="global-search" placeholder="Search E-Books, newspapers, notes…">
+    </div>
+
+    <div class="header-right">
+        <div class="dropdown">
+            <div class="user-profile-btn" id="profile-dropdown-btn" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer;">
+                <div class="avatar-circle" id="header-avatar">
+                    <span id="header-avatar-text">A</span>
+                </div>
+                <div class="d-none d-md-block text-start ms-1">
+                    <div class="fw-bold lh-1 text-white" style="font-size:0.85rem;" id="header-user-name">Lotus Admin</div>
+                    <span class="badge" style="background:var(--parchment-tan);color:var(--dark-roast);font-size:0.65rem;" id="header-role-badge">ADMIN</span>
+                </div>
+                <i class="fa-solid fa-chevron-down text-white ms-1" style="font-size:0.7rem;opacity:0.7;"></i>
+            </div>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-1">
+                <li><a class="dropdown-item" href="#" onclick="openUpdateProfileModal()"><i class="fa-solid fa-user-pen me-2" style="color:var(--warm-walnut);"></i>Update Profile</a></li>
+                <li><a class="dropdown-item" href="#" onclick="openChangePasswordModal()"><i class="fa-solid fa-key me-2" style="color:var(--warm-walnut);"></i>Change Password</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="#" onclick="handleSignOut()"><i class="fa-solid fa-right-from-bracket me-2"></i>Sign Out</a></li>
+            </ul>
+        </div>
+    </div>
+</header>
+
+<!-- SIDEBAR -->
+<aside class="lotus-sidebar">
+    <div class="sidebar-label">Navigation</div>
+    <ul class="sidebar-menu">
+        <li class="sidebar-item" data-role-perm="admin,editor,member">
+            <a href="#dashboard" class="sidebar-link active" data-tab="dashboard">
+                <i class="fa-solid fa-chart-pie"></i><span>Dashboard</span>
+            </a>
+        </li>
+        <li class="sidebar-item" data-role-perm="admin,editor,member">
+            <a href="#books" class="sidebar-link" data-tab="books">
+                <i class="fa-solid fa-book-open"></i><span>E-Books</span>
+            </a>
+        </li>
+        <li class="sidebar-item" data-role-perm="admin,editor,member">
+            <a href="#newspapers" class="sidebar-link" data-tab="newspapers">
+                <i class="fa-regular fa-newspaper"></i><span>Daily Newspapers</span>
+            </a>
+        </li>
+        <li class="sidebar-item" data-role-perm="admin,editor,member">
+            <a href="#notes" class="sidebar-link" data-tab="notes">
+                <i class="fa-regular fa-note-sticky"></i><span>Notes & Research</span>
+            </a>
+        </li>
+        <li class="sidebar-item" data-role-perm="admin,editor">
+            <a href="#members" class="sidebar-link" data-tab="members">
+                <i class="fa-solid fa-users"></i><span>Member Directory</span>
+            </a>
+        </li>
+        <li class="sidebar-item" data-role-perm="admin">
+            <a href="#settings" class="sidebar-link" data-tab="settings">
+                <i class="fa-solid fa-sliders"></i><span>Settings</span>
+            </a>
+        </li>
+    </ul>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="lotus-main">
+    <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1090;"></div>
+
+    <!-- DASHBOARD -->
+    <section id="view-dashboard" class="view-section">
+        <div class="page-header">
+            <div>
+                <h2 class="page-title">Overview</h2>
+                <div class="page-breadcrumb">LOTUS Library System — Digital Repository & Research Hub</div>
+            </div>
+            <button class="btn btn-sm" style="background:var(--soft-linen);color:var(--dark-roast);border:1px solid var(--parchment-tan);" onclick="renderDashboard()">
+                <i class="fa-solid fa-rotate-right me-1"></i> Refresh
+            </button>
+        </div>
+
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-5 g-3 mb-4">
+            <div class="col"><div class="stat-card c1"><div><div class="stat-label">E-Books</div><div class="stat-value" id="dash-stat-total-ebooks">0</div></div><div class="stat-icon-wrapper"><i class="fa-solid fa-book-bookmark"></i></div></div></div>
+            <div class="col"><div class="stat-card c2"><div><div class="stat-label">Today Papers</div><div class="stat-value" id="dash-stat-today-newspapers">0</div></div><div class="stat-icon-wrapper"><i class="fa-regular fa-newspaper"></i></div></div></div>
+            <div class="col"><div class="stat-card c3"><div><div class="stat-label">Published Notes</div><div class="stat-value" id="dash-stat-published-notes">0</div></div><div class="stat-icon-wrapper"><i class="fa-solid fa-circle-check"></i></div></div></div>
+            <div class="col"><div class="stat-card c4"><div><div class="stat-label">Pending Approval</div><div class="stat-value" id="dash-stat-pending-notes">0</div></div><div class="stat-icon-wrapper"><i class="fa-solid fa-clock"></i></div></div></div>
+            <div class="col"><div class="stat-card c5"><div><div class="stat-label">Members</div><div class="stat-value" id="dash-stat-total-members">0</div></div><div class="stat-icon-wrapper"><i class="fa-solid fa-users"></i></div></div></div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="lotus-card">
+                    <div class="lotus-card-header">
+                        <h3 class="lotus-card-title"><i class="fa-solid fa-book-open me-2" style="color:var(--warm-walnut);"></i>Latest E-Books</h3>
+                        <button class="btn btn-sm btn-link text-decoration-none" style="color:var(--warm-walnut);" onclick="navigateTab('books')">View All</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="lotus-table">
+                            <thead><tr><th>Cover</th><th>Title</th><th>Author</th><th>Read</th></tr></thead>
+                            <tbody id="dash-recent-ebooks-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="lotus-card">
+                    <div class="lotus-card-header">
+                        <h3 class="lotus-card-title"><i class="fa-solid fa-shield-halved me-2" style="color:var(--parchment-tan);"></i>Notes Approval Queue</h3>
+                        <button class="btn btn-sm btn-link text-decoration-none" style="color:var(--warm-walnut);" onclick="navigateTab('notes')">Manage</button>
+                    </div>
+                    <div id="dash-pending-notes-widget"></div>
+                </div>
+                <div class="lotus-card">
+                    <div class="lotus-card-header">
+                        <h3 class="lotus-card-title"><i class="fa-solid fa-chart-pie me-2" style="color:var(--warm-walnut);"></i>Category Breakdown</h3>
+                    </div>
+                    <div class="p-3"><canvas id="chart-category-dist" height="200"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- E-BOOKS -->
+    <section id="view-books" class="view-section" style="display:none;">
+        <div class="page-header">
+            <div>
+                <h2 class="page-title">E-Books</h2>
+                <div class="page-breadcrumb">Click any book to open in the simple full-page PDF reader.</div>
+            </div>
+            <button class="btn btn-sm btn-lotus-secondary" onclick="openAddBookModal()" data-role-perm="admin,editor">
+                <i class="fa-solid fa-plus me-1"></i> Add E-Book
+            </button>
+        </div>
+        <div class="lotus-card p-3 mb-4">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-7">
+                    <div class="input-group">
+                        <span class="input-group-text" style="background:var(--soft-linen);border-color:var(--soft-linen);"><i class="fa-solid fa-magnifying-glass" style="color:var(--warm-walnut);"></i></span>
+                        <input type="text" id="book-search-input" class="form-control" placeholder="Search by title, author, ISBN…" onkeyup="renderBooks()">
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <select id="book-category-filter" class="form-select" onchange="renderBooks()">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row" id="books-grid-view"></div>
+    </section>
+
+    <!-- NEWSPAPERS -->
+    <section id="view-newspapers" class="view-section" style="display:none;">
+        <div class="page-header">
+            <div>
+                <h2 class="page-title">Daily Newspapers</h2>
+                <div class="page-breadcrumb">Archive and access daily newspaper editions. Click to read in the inbuilt PDF reader.</div>
+            </div>
+            <button class="btn btn-sm btn-lotus-secondary" onclick="openAddNewspaperModal()" data-role-perm="admin,editor">
+                <i class="fa-solid fa-newspaper me-1"></i> Add Newspaper
+            </button>
+        </div>
+        <div class="lotus-card p-3 mb-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold" style="font-size:0.8rem;">Publication Date</label>
+                    <input type="date" id="newspaper-date-filter" class="form-control" onchange="renderNewspapers()">
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label fw-bold" style="font-size:0.8rem;">Search Newspaper</label>
+                    <input type="text" id="newspaper-search-input" class="form-control" placeholder="Search newspaper name…" onkeyup="renderNewspapers()">
+                </div>
+            </div>
+        </div>
+        <div class="row" id="newspapers-grid"></div>
+    </section>
+
+    <!-- NOTES -->
+    <section id="view-notes" class="view-section" style="display:none;">
+        <div class="page-header">
+            <div>
+                <h2 class="page-title">Notes & Research</h2>
+                <div class="page-breadcrumb">Notes by Editors & Members require Admin approval before publishing.</div>
+            </div>
+            <button class="btn btn-sm btn-lotus-secondary" onclick="openAddNoteModal()" data-role-perm="admin,editor,member">
+                <i class="fa-regular fa-pen-to-square me-1"></i> Submit Note
+            </button>
+        </div>
+        <div class="lotus-card p-3 mb-4">
+            <div class="col-md-4">
+                <select id="notes-status-filter" class="form-select" onchange="renderNotes()">
+                    <option value="">All Statuses</option>
+                    <option value="approved">Approved & Published</option>
+                    <option value="pending">Pending Review</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+        </div>
+        <div class="row" id="notes-grid"></div>
+    </section>
+
+    <!-- MEMBERS -->
+    <section id="view-members" class="view-section" style="display:none;">
+        <div class="page-header">
+            <div>
+                <h2 class="page-title">Member Directory</h2>
+                <div class="page-breadcrumb">Manage user accounts, roles, edit profiles, and reset passwords.</div>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-lotus-secondary me-2" onclick="openIssueItemModal()" data-role-perm="admin"><i class="fa-solid fa-book-bookmark me-1"></i> Issue Item</button>
+                <button class="btn btn-sm btn-lotus-primary" onclick="openAddMemberModal()" data-role-perm="admin,editor"><i class="fa-solid fa-user-plus me-1"></i> Register User</button>
+            </div>
+        </div>
+        <div class="lotus-card p-3 mb-4">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <input type="text" id="member-search-input" class="form-control" placeholder="Search by name, email, phone, or Membership ID…" onkeyup="renderMembers()">
+                </div>
+                <div class="col-md-4">
+                    <select id="member-status-filter" class="form-select" onchange="renderMembers()">
+                        <option value="">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="blocked">Blocked</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="lotus-card">
+            <div class="table-responsive">
+                <table class="lotus-table">
+                    <thead>
+                        <tr>
+                            <th>Membership ID</th>
+                            <th>Name & Email</th>
+                            <th>Phone</th>
+                            <th>Address</th>
+                            <th>Role</th>
+                            <th>Notes</th>
+                            <th>Issues</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="members-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="view-settings" class="view-section" style="display:none;">
+        <div class="page-header">
+            <div>
+                <h2 class="page-title">System Settings</h2>
+                <div class="page-breadcrumb">Manage system metadata and configurations.</div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="lotus-card">
+                    <div class="lotus-card-header"><h3 class="lotus-card-title">System Parameters</h3></div>
+                    <div class="p-4">
+                        <form onsubmit="saveSystemSettings(event)">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Library Name</label>
+                                <input type="text" id="setting-library-name" class="form-control" value="LOTUS Library System" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Contact Email</label>
+                                <input type="email" id="setting-contact-email" class="form-control" value="admin@lotus.com" required>
+                            </div>
+                            <button type="submit" class="btn btn-lotus-primary"><i class="fa-solid fa-floppy-disk me-1"></i> Save</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="lotus-card h-100">
+                    <div class="lotus-card-header"><h3 class="lotus-card-title">Category Management</h3></div>
+                    <div class="p-4">
+                        <form onsubmit="addSettingsCategory(event)" class="d-flex gap-2 mb-4">
+                            <input type="text" id="setting-new-category" class="form-control" placeholder="New Category Name..." required>
+                            <button type="submit" class="btn btn-lotus-primary" style="white-space:nowrap;"><i class="fa-solid fa-plus me-1"></i> Add</button>
+                        </form>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Category Name</th>
+                                        <th class="text-center" style="width:100px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="settings-category-list">
+                                    <tr><td colspan="2" class="text-center text-muted">Loading categories...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- ================================================
+     MODALS
+     ================================================ -->
+
+<!-- SIMPLE FULL-PAGE PDF READER MODAL -->
+<div class="modal fade" id="modalBookReader" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen m-0">
+        <div class="modal-content" style="background:var(--dark-roast);border:none;height:100vh;display:flex;flex-direction:column;border-radius:0;">
+
+            <!-- READER HEADER -->
+            <div class="d-flex align-items-center justify-content-between px-4 py-2" style="background:var(--dark-roast-2);border-bottom:2px solid var(--parchment-tan);">
+                <div>
+                    <div class="fw-bold text-white" id="book-reader-title" style="font-family:'Playfair Display',serif;font-size:1.15rem;">📄 LOTUS PDF Reader</div>
+                    <small style="color:var(--parchment-tan);font-size:0.72rem;"><i class="fa-solid fa-eye me-1"></i>FULL PAGE VIEW — Protected Mode</small>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closePdfReader()"></button>
+            </div>
+
+            <!-- PDF VIEWER AREA (FULL PAGE SIMPLE VIEWER) -->
+            <div id="pdf-viewer-area" style="flex:1;width:100%;height:calc(100vh - 56px);overflow:hidden;background:#1E2320;display:flex;align-items:center;justify-content:center;">
+                <iframe id="pdf-viewer-iframe" style="width:100%;height:100%;border:none;display:block;" src="about:blank"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- UPDATE PROFILE MODAL -->
+<div class="modal fade" id="modalUpdateProfile" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header modal-header-parchment">
+                <h5 class="modal-title"><i class="fa-solid fa-user-pen me-2" style="color:var(--parchment-tan);"></i>Update Profile</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="modal-profile-form" onsubmit="submitUpdateProfile(event)">
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <div id="profile-photo-preview-wrap">
+                            <div class="profile-photo-placeholder" id="profile-photo-placeholder"><i class="fa-solid fa-user"></i></div>
+                            <img id="profile-photo-img-preview" class="profile-photo-preview" src="" style="display:none;" alt="Profile Photo">
+                        </div>
+                        <label class="btn btn-sm mt-2" style="background:var(--soft-linen);border:1px solid var(--parchment-tan);color:var(--dark-roast);cursor:pointer;">
+                            <i class="fa-solid fa-camera me-1"></i> Change Photo
+                            <input type="file" id="profile-photo-file" accept="image/*" style="display:none;" onchange="handleProfilePhotoChange(event)">
+                        </label>
+                        <input type="hidden" id="profile-photo-data">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Full Name</label>
+                        <input type="text" id="profile-name-display" class="form-control" readonly style="background:var(--linen-light);">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mobile Number</label>
+                        <input type="text" id="profile-phone-input" class="form-control" placeholder="+91 98765 43210">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email Address</label>
+                        <input type="text" id="profile-email-display" class="form-control" readonly style="background:var(--linen-light);">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-lotus-secondary">Save Profile</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div class="modal fade" id="modalChangePassword" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header modal-header-parchment">
+                <h5 class="modal-title"><i class="fa-solid fa-key me-2" style="color:var(--parchment-tan);"></i>Change Password</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="submitChangePassword(event)">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email</label>
+                        <input type="email" id="modal-password-email" class="form-control" readonly style="background:var(--linen-light);">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Current Password</label>
+                        <input type="password" id="modal-password-old" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">New Password</label>
+                        <input type="password" id="modal-password-new" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-lotus-secondary">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- NOTE READER MODAL -->
+<div class="modal fade" id="modalNoteReader" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-header-parchment">
+                <div>
+                    <h5 class="modal-title" id="note-reader-title">Note</h5>
+                    <small style="color:var(--parchment-tan);" id="note-reader-meta"></small>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3 p-3 rounded" id="note-reader-text" style="white-space:pre-wrap;font-size:0.95rem;line-height:1.7;background:var(--linen-light);border-left:4px solid var(--parchment-tan);"></div>
+                <div id="note-reader-attachment-container"></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- ADD E-BOOK MODAL -->
+<div class="modal fade" id="modalBookForm" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-header-parchment">
+                <h5 class="modal-title">Add E-Book to Vault</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="modal-book-form" onsubmit="saveBookForm(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="modal-book-id">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">E-Book Title *</label>
+                            <input type="text" id="modal-book-title" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">ISBN *</label>
+                            <input type="text" id="modal-book-isbn" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Author *</label>
+                            <input type="text" id="modal-book-author" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <label class="form-label fw-bold mb-0">Category *</label>
+                                <button type="button" class="btn btn-xs text-primary p-0 text-decoration-underline border-0 bg-transparent" onclick="openAddCategoryModal()">+ New Category</button>
+                            </div>
+                            <select id="modal-book-category" class="form-select" required></select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Cover Photo</label>
+                            <input type="file" id="modal-book-cover-file" class="form-control" accept="image/*">
+                            <input type="hidden" id="modal-book-cover">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Upload PDF *</label>
+                            <input type="file" id="modal-book-pdf-file" class="form-control" accept=".pdf">
+                            <input type="hidden" id="modal-book-url">
+                        </div>
+                        <div class="col-12 p-3 rounded" style="background:var(--linen-light);border:1px solid var(--soft-linen);" data-role-perm="admin">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="modal-book-visible" checked>
+                                <label class="fw-bold ms-2" for="modal-book-visible">Show in Public Catalog</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-lotus-secondary">Save E-Book</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD CATEGORY MODAL -->
+<div class="modal fade" id="modalAddCategory" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header modal-header-parchment">
+                <h5 class="modal-title"><i class="fa-solid fa-folder-plus me-2" style="color:var(--parchment-tan);"></i>Add New Category</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="modal-category-form" onsubmit="submitAddCategory(event)">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Category Name *</label>
+                        <input type="text" id="modal-cat-name" class="form-control" placeholder="e.g. Artificial Intelligence" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Category Code (Optional)</label>
+                        <input type="text" id="modal-cat-code" class="form-control" placeholder="e.g. AI_TECH">
+                        <small class="text-muted">Short code identifier. If left blank, it will be auto-generated.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Description</label>
+                        <textarea id="modal-cat-desc" class="form-control" rows="3" placeholder="Brief description of books in this category…"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-lotus-secondary"><i class="fa-solid fa-check me-1"></i> Save Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD NEWSPAPER MODAL -->
+<div class="modal fade" id="modalNewspaperForm" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header modal-header-parchment">
+                <h5 class="modal-title"><i class="fa-regular fa-newspaper me-2" style="color:var(--parchment-tan);"></i>Add Daily Newspaper</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="modal-newspaper-form" onsubmit="saveNewspaperForm(event)">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Newspaper Name *</label>
+                        <input type="text" id="modal-paper-title" class="form-control" placeholder="e.g. The Tribune, Amar Ujala" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Upload PDF *</label>
+                        <input type="file" id="modal-paper-pdf-file" class="form-control" accept=".pdf" required>
+                        <input type="hidden" id="modal-paper-url">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Publication Date</label>
+                        <input type="date" id="modal-paper-date" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-lotus-secondary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD NOTE MODAL -->
+<div class="modal fade" id="modalNoteForm" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-header-parchment">
+                <h5 class="modal-title">Submit Research Note</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="modal-note-form" onsubmit="saveNoteForm(event)">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Title *</label>
+                        <input type="text" id="modal-note-title" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Category</label>
+                        <input type="text" id="modal-note-category" class="form-control" value="General Research">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Content *</label>
+                        <textarea id="modal-note-content" class="form-control" rows="5" required></textarea>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Attachment Type</label>
+                            <select id="modal-note-file-type" class="form-select">
+                                <option value="none">No attachment</option>
+                                <option value="pdf">PDF Document</option>
+                                <option value="image">Image / Diagram</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Upload File</label>
+                            <input type="file" id="modal-note-file-picker" class="form-control">
+                            <input type="hidden" id="modal-note-file-url">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-lotus-secondary">Submit for Approval</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- EDIT MEMBER MODAL -->
+<div class="modal fade" id="modalEditMember" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header modal-header-parchment">
+                <h5 class="modal-title"><i class="fa-solid fa-user-pen me-2" style="color:var(--parchment-tan);"></i>Edit Member</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="modal-edit-member-form" onsubmit="saveEditMemberForm(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="edit-member-id">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Membership ID</label>
+                        <input type="text" id="edit-member-code" class="form-control" readonly style="background:var(--linen-light);">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Full Name *</label>
+                        <input type="text" id="edit-member-name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email *</label>
+                        <input type="email" id="edit-member-email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Phone *</label>
+                        <input type="text" id="edit-member-phone" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Address *</label>
+                        <input type="text" id="edit-member-address" class="form-control" required>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Role</label>
+                            <select id="edit-member-role" class="form-select">
+                                <option value="member">Member</option>
+                                <option value="editor">Editor</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Status</label>
+                            <select id="edit-member-status" class="form-select">
+                                <option value="active">Active</option>
+                                <option value="blocked">Blocked</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-lotus-secondary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADMIN RESET PASSWORD MODAL -->
+<div class="modal fade" id="modalAdminResetPassword" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header modal-header-parchment">
+                <h5 class="modal-title"><i class="fa-solid fa-key me-2" style="color:var(--parchment-tan);"></i>Reset User Password</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="modal-admin-reset-form" onsubmit="submitAdminResetPassword(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="reset-target-user-id">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Account</label>
+                        <input type="text" id="reset-target-user-name" class="form-control" readonly style="background:var(--linen-light);">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">New Password *</label>
+                        <input type="password" id="reset-new-password" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reset Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ISSUE ITEM MODAL -->
+<div class="modal fade" id="modalIssueItem" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header modal-header-parchment">
+                <h5 class="modal-title"><i class="fa-solid fa-book-bookmark me-2" style="color:var(--parchment-tan);"></i>Issue Item to Member</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="modal-issue-form" onsubmit="saveIssueItemForm(event)">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Select Member *</label>
+                        <select id="modal-issue-member" class="form-select" required></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Item Type *</label>
+                        <select id="modal-issue-type" class="form-select" onchange="populateIssueItemDropdown()" required>
+                            <option value="book">E-Book</option>
+                            <option value="newspaper">Newspaper</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Select Item *</label>
+                        <select id="modal-issue-item-id" class="form-select" required></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Issue Date *</label>
+                        <input type="date" id="modal-issue-date" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <input type="text" id="modal-issue-notes" class="form-control" placeholder="Instructions or notes…">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-lotus-secondary">Issue Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD MEMBER MODAL -->
+<div class="modal fade" id="modalMemberForm" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header modal-header-parchment">
+                <h5 class="modal-title">Register New User</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="modal-member-form" onsubmit="saveMemberForm(event)">
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label fw-bold">Full Name *</label><input type="text" id="modal-member-name" class="form-control" required></div>
+                    <div class="mb-3"><label class="form-label fw-bold">Email *</label><input type="email" id="modal-member-email" class="form-control" required></div>
+                    <div class="mb-3"><label class="form-label fw-bold">Phone *</label><input type="text" id="modal-member-phone" class="form-control" required></div>
+                    <div class="mb-3"><label class="form-label fw-bold">Address *</label><input type="text" id="modal-member-address" class="form-control" required></div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Role</label>
+                        <select id="modal-member-role" class="form-select">
+                            <option value="member">Member</option>
+                            <option value="editor">Editor</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="mb-3"><label class="form-label fw-bold">Password</label><input type="password" id="modal-member-password" class="form-control" placeholder="Default: member123"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-lotus-primary">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- PDF.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+    // Set PDF.js worker
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+</script>
+<script src="js/app.js"></script>
+</body>
+</html>
